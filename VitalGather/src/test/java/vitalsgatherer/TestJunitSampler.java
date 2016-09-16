@@ -17,8 +17,8 @@ public class TestJunitSampler {
         defaultParameters.addArgument("fileName", "dataz");
         defaultParameters.addArgument("startDate", new Date("09/15/2016 12:14:15").toString());
         defaultParameters.addArgument("perfectoHost","demo.perfectomobile.com");
-        defaultParameters.addArgument("perfectoUser", "<YOUR_USER>@perfectomobile.com");
-        defaultParameters.addArgument("perfectoPassword", "<YOUR_PASSWORD");
+        defaultParameters.addArgument("perfectoUser", "jeremyp@perfectomobile.com");
+        defaultParameters.addArgument("perfectoPassword", "perfecto123");
         new JmeterSampler().runTest(new JavaSamplerContext(defaultParameters));
     }
 }
