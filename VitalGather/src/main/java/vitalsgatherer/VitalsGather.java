@@ -1,37 +1,27 @@
 package vitalsgatherer;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.StringWriter;
-import java.io.Writer;
+import au.com.bytecode.opencsv.CSVParser;
+import au.com.bytecode.opencsv.CSVReader;
+import au.com.bytecode.opencsv.CSVWriter;
+import com.fasterxml.jackson.databind.MappingIterator;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.csv.CsvMapper;
+import com.fasterxml.jackson.dataformat.csv.CsvSchema;
+import org.json.JSONArray;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPathExpressionException;
+import java.io.*;
 import java.net.Proxy;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPathExpressionException;
-
-import org.json.JSONArray;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
-
-import com.fasterxml.jackson.databind.MappingIterator;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.csv.CsvMapper;
-import com.fasterxml.jackson.dataformat.csv.CsvSchema;
-
-import au.com.bytecode.opencsv.CSVParser;
-import au.com.bytecode.opencsv.CSVReader;
-import au.com.bytecode.opencsv.CSVWriter;
 
 public class VitalsGather {
 
@@ -59,17 +49,6 @@ public class VitalsGather {
 	}
 
 	public Map<resultOptions, String> results = new HashMap<resultOptions, String>();
-
-	@SuppressWarnings("deprecation")
-	public void main(String[] args) throws IOException, URISyntaxException, ParserConfigurationException, SAXException,
-			XPathExpressionException {
-		/*
-		 * // TODO Auto-generated method stub
-		 * getVitals("demo.perfectomobile.com", "jeremyp@perfectomobile.com",
-		 * "perfecto123", "PRIVATE:NewEggSite", new Date("09/12/2016 19:51:15"),
-		 * "", availableTimeTypes.started, "dataz", "d:\\", true);
-		 */
-	}
 
 	public Map<resultOptions, String> getVitals(String host, String username, String password, String scriptKey,
 			Date startTime, String offSet, availableTimeTypes att, String fileName, String fileLocation,
@@ -127,143 +106,148 @@ public class VitalsGather {
 		boolean overcompleteios = false;
 		for (int i = 0; i < rk.length; i++) {
 
-			response = hc.sendRequest("https://" + host + "/services/reports/" + rk[i].replace(" ", "%20")
-					+ "?operation=download&user=" + username + "&password=" + password + "&responseformat=xml");
+			try {
+				response = hc.sendRequest("https://" + host + "/services/reports/" + rk[i].replace(" ", "%20")
+                        + "?operation=download&user=" + username + "&password=" + password + "&responseformat=xml");
 
-			os = hc.getXPathValue(response, "//*[@displayName='OS']/following-sibling::value");
+				os = hc.getXPathValue(response, "//*[@displayName='OS']/following-sibling::value");
 
-			if (overwrite && !overcompleteandroid && os.equals("Android")) {
-				String jsonFilePath = fileLocation + fileName + startTimeEpoch + os + ".json";
-				String csvFilePath = fileLocation + fileName + startTimeEpoch + os + ".csv";
-				String transactionCSVFilePath = fileLocation + fileName + startTimeEpoch + os + "Transaction.csv";
-				String transactionJsonFilePath = fileLocation + fileName + startTimeEpoch + os + "Transaction.json";
+				if (overwrite && !overcompleteandroid && os.equals("Android")) {
+                    String jsonFilePath = fileLocation + fileName + startTimeEpoch + os + ".json";
+                    String csvFilePath = fileLocation + fileName + startTimeEpoch + os + ".csv";
+                    String transactionCSVFilePath = fileLocation + fileName + startTimeEpoch + os + "Transaction.csv";
+                    String transactionJsonFilePath = fileLocation + fileName + startTimeEpoch + os + "Transaction.json";
 
-				results.put(resultOptions.fullPathCsvAndroid, csvFilePath);
-				results.put(resultOptions.fullPathJsonAndroid, jsonFilePath);
-				results.put(resultOptions.fullPathTransactionJsonAndroid, transactionJsonFilePath);
-				results.put(resultOptions.fullPathTransactionCsvAndroid, transactionCSVFilePath);
+                    results.put(resultOptions.fullPathCsvAndroid, csvFilePath);
+                    results.put(resultOptions.fullPathJsonAndroid, jsonFilePath);
+                    results.put(resultOptions.fullPathTransactionJsonAndroid, transactionJsonFilePath);
+                    results.put(resultOptions.fullPathTransactionCsvAndroid, transactionCSVFilePath);
 
-				File csvTemp = new File(csvFilePath);
-				File jsonTemp = new File(jsonFilePath);
-				File jsonTransTemp = new File(transactionJsonFilePath);
-				File csvTransTemp = new File(transactionCSVFilePath);
-				csvTemp.delete();
-				jsonTemp.delete();
-				jsonTransTemp.delete();
-				csvTransTemp.delete();
-				overcompleteandroid = true;
-			}
+                    File csvTemp = new File(csvFilePath);
+                    File jsonTemp = new File(jsonFilePath);
+                    File jsonTransTemp = new File(transactionJsonFilePath);
+                    File csvTransTemp = new File(transactionCSVFilePath);
+                    csvTemp.delete();
+                    jsonTemp.delete();
+                    jsonTransTemp.delete();
+                    csvTransTemp.delete();
+                    overcompleteandroid = true;
+                }
 
-			if (overwrite && !overcompleteios && os.equals("iOS")) {
-				String jsonFilePath = fileLocation + fileName + startTimeEpoch + os + ".json";
-				String csvFilePath = fileLocation + fileName + startTimeEpoch + os + ".csv";
-				String transactionCSVFilePath = fileLocation + fileName + startTimeEpoch + os + "Transaction.csv";
-				String transactionJsonFilePath = fileLocation + fileName + startTimeEpoch + os + "Transaction.json";
+				if (overwrite && !overcompleteios && os.equals("iOS")) {
+                    String jsonFilePath = fileLocation + fileName + startTimeEpoch + os + ".json";
+                    String csvFilePath = fileLocation + fileName + startTimeEpoch + os + ".csv";
+                    String transactionCSVFilePath = fileLocation + fileName + startTimeEpoch + os + "Transaction.csv";
+                    String transactionJsonFilePath = fileLocation + fileName + startTimeEpoch + os + "Transaction.json";
 
-				results.put(resultOptions.fullPathCsvIos, csvFilePath);
-				results.put(resultOptions.fullPathJsonIos, jsonFilePath);
-				results.put(resultOptions.fullPathTransactionJsonIos, transactionJsonFilePath);
-				results.put(resultOptions.fullPathTransactionCsvIos, transactionCSVFilePath);
+                    results.put(resultOptions.fullPathCsvIos, csvFilePath);
+                    results.put(resultOptions.fullPathJsonIos, jsonFilePath);
+                    results.put(resultOptions.fullPathTransactionJsonIos, transactionJsonFilePath);
+                    results.put(resultOptions.fullPathTransactionCsvIos, transactionCSVFilePath);
 
-				File csvTemp = new File(csvFilePath);
-				File jsonTemp = new File(jsonFilePath);
-				File jsonTransTemp = new File(transactionJsonFilePath);
-				File csvTransTemp = new File(transactionCSVFilePath);
-				csvTemp.delete();
-				jsonTemp.delete();
-				jsonTransTemp.delete();
-				csvTransTemp.delete();
-				overcompleteios = true;
-			}
+                    File csvTemp = new File(csvFilePath);
+                    File jsonTemp = new File(jsonFilePath);
+                    File jsonTransTemp = new File(transactionJsonFilePath);
+                    File csvTransTemp = new File(transactionCSVFilePath);
+                    csvTemp.delete();
+                    jsonTemp.delete();
+                    jsonTransTemp.delete();
+                    csvTransTemp.delete();
+                    overcompleteios = true;
+                }
 
-			csv = fileLocation + fileName + startTimeEpoch + os + ".csv";
-			csvTrans = fileLocation + fileName + startTimeEpoch + os + "Transaction.csv";
-			csvFile = new File(csv);
-			csvFileTrans = new File(csvTrans);
-			fw = new FileWriter(csv, true);
-			writer = new CSVWriter(fw);
-			String vitalFile = hc.getXPathValue(response, "//dataItem/attachment[contains(text(),'vitals')]");
+				csv = fileLocation + fileName + startTimeEpoch + os + ".csv";
+				csvTrans = fileLocation + fileName + startTimeEpoch + os + "Transaction.csv";
+				csvFile = new File(csv);
+				System.out.println(csvFile.getAbsoluteFile());
+				csvFileTrans = new File(csvTrans);
+				fw = new FileWriter(csv, true);
+				writer = new CSVWriter(fw);
+				String vitalFile = hc.getXPathValue(response, "//dataItem/attachment[contains(text(),'vitals')]");
 
-			if (vitalFile != null) {
-				CSVReader reader = null;
-				if (csvFile.length() <= 0) {
-					reader = readCSV(new URL("https://" + host + "/services/reports/" + rk[i].replace(" ", "%20")
-							+ "?operation=monitor&user=" + username + "&password=" + password + "&attachment="
-							+ vitalFile), true);
-				} else {
-					reader = readCSV(new URL("https://" + host + "/services/reports/" + rk[i].replace(" ", "%20")
-							+ "?operation=monitor&user=" + username + "&password=" + password + "&attachment="
-							+ vitalFile), false);
-				}
-				writer.writeAll(reader.readAll());
+				if (vitalFile != null) {
+                    CSVReader reader = null;
+                    if (csvFile.length() <= 0) {
+                        reader = readCSV(new URL("https://" + host + "/services/reports/" + rk[i].replace(" ", "%20")
+                                + "?operation=monitor&user=" + username + "&password=" + password + "&attachment="
+                                + vitalFile), true);
+                    } else {
+                        reader = readCSV(new URL("https://" + host + "/services/reports/" + rk[i].replace(" ", "%20")
+                                + "?operation=monitor&user=" + username + "&password=" + password + "&attachment="
+                                + vitalFile), false);
+                    }
+                    writer.writeAll(reader.readAll());
+                    if (os.equals("iOS")) {
+                        iosfound = true;
+
+                    } else {
+                        androidfound = true;
+                    }
+
+                }
+
+				writer.close();
+
+				Map<String, Map<String, String>> transactions = new HashMap<String, Map<String, String>>();
+				Map<String, String> data = new HashMap<String, String>();
+				String transName = "";
+				String transTimer = "";
+				String time = "";
+				String nText = "";
+				String nText2 = "";
+				String nText3 = "";
+				NodeList nodeL = hc.getXPathList(response,
+                        "//name[@displayName=\"Timer report\"]/parent::info/following-sibling::parameters/*/name[@displayName=\"Description\"]/following-sibling::value");
+				NodeList nodeL2 = hc.getXPathList(response,
+                        "//name[@displayName=\"Timer report\"]/parent::info/following-sibling::parameters/*/name[@displayName=\"Result\"]/following-sibling::value");
+				NodeList nodeL3 = hc.getXPathList(response,
+                        "//name[@displayName=\"Timer report\"]/parent::info/times/flowTimes/end/millis");
+				for (int z = 0; z < nodeL.getLength(); z++) {
+                    nText = nodeL.item(z).getTextContent();
+                    nText2 = nodeL2.item(z).getTextContent();
+                    nText3 = nodeL3.item(z).getTextContent();
+                    transName = nText;
+                    transTimer = nText2;
+                    time = nText3;
+                    data.put(transName, transTimer);
+                    transactions.put(time, data);
+
+                    if (os.equals("iOS")) {
+                        iosTransFound = true;
+
+                    } else {
+                        androidTransFound = true;
+                    }
+
+                }
+
 				if (os.equals("iOS")) {
-					iosfound = true;
-
-				} else {
-					androidfound = true;
-				}
-
-			}
-
-			writer.close();
-
-			Map<String, Map<String, String>> transactions = new HashMap<String, Map<String, String>>();
-			Map<String, String> data = new HashMap<String, String>();
-			String transName = "";
-			String transTimer = "";
-			String time = "";
-			String nText = "";
-			String nText2 = "";
-			String nText3 = "";
-			NodeList nodeL = hc.getXPathList(response,
-					"//name[@displayName=\"Timer report\"]/parent::info/following-sibling::parameters/*/name[@displayName=\"Description\"]/following-sibling::value");
-			NodeList nodeL2 = hc.getXPathList(response,
-					"//name[@displayName=\"Timer report\"]/parent::info/following-sibling::parameters/*/name[@displayName=\"Result\"]/following-sibling::value");
-			NodeList nodeL3 = hc.getXPathList(response,
-					"//name[@displayName=\"Timer report\"]/parent::info/times/flowTimes/end/millis");
-			for (int z = 0; z < nodeL.getLength(); z++) {
-				nText = nodeL.item(z).getTextContent();
-				nText2 = nodeL2.item(z).getTextContent();
-				nText3 = nodeL3.item(z).getTextContent();
-				transName = nText;
-				transTimer = nText2;
-				time = nText3;
-				data.put(transName, transTimer);
-				transactions.put(time, data);
-
-				if (os.equals("iOS")) {
-					iosTransFound = true;
-
-				} else {
-					androidTransFound = true;
-				}
-
-			}
-
-			if (os.equals("iOS")) {
-				if (iosfound) {
-					results.put(resultOptions.statusIos, "success");
-					if (iosTransFound) {
-						results.put(resultOptions.statusTransactionIos, "success");
-						if (csvFileTrans.length() <= 0) {
-							MapToCSV(transactions, results.get(resultOptions.fullPathTransactionCsvIos), true);
-						} else {
-							MapToCSV(transactions, results.get(resultOptions.fullPathTransactionCsvIos), false);
-						}
-					}
-				}
-			} else {
-				if (androidfound) {
-					results.put(resultOptions.statusAndroid, "success");
-					if (androidTransFound) {
-						results.put(resultOptions.statusTransactionAndroid, "success");
-						if (csvFileTrans.length() <= 0) {
-							MapToCSV(transactions, results.get(resultOptions.fullPathTransactionCsvAndroid), true);
-						} else {
-							MapToCSV(transactions, results.get(resultOptions.fullPathTransactionCsvAndroid), false);
-						}
-					}
-				}
+                    if (iosfound) {
+                        results.put(resultOptions.statusIos, "success");
+                        if (iosTransFound) {
+                            results.put(resultOptions.statusTransactionIos, "success");
+                            if (csvFileTrans.length() <= 0) {
+                                MapToCSV(transactions, results.get(resultOptions.fullPathTransactionCsvIos), true);
+                            } else {
+                                MapToCSV(transactions, results.get(resultOptions.fullPathTransactionCsvIos), false);
+                            }
+                        }
+                    }
+                } else {
+                    if (androidfound) {
+                        results.put(resultOptions.statusAndroid, "success");
+                        if (androidTransFound) {
+                            results.put(resultOptions.statusTransactionAndroid, "success");
+                            if (csvFileTrans.length() <= 0) {
+                                MapToCSV(transactions, results.get(resultOptions.fullPathTransactionCsvAndroid), true);
+                            } else {
+                                MapToCSV(transactions, results.get(resultOptions.fullPathTransactionCsvAndroid), false);
+                            }
+                        }
+                    }
+                }
+			} catch (Exception e) {
+				System.out.print(e.getMessage());
 			}
 		}
 

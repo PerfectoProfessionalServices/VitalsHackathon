@@ -1,38 +1,20 @@
 package vitalsgatherer;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.StringReader;
-import java.net.HttpURLConnection;
-import java.net.Proxy;
-import java.net.URISyntaxException;
-import java.net.URL;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpression;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.json.JSONTokener;
-import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.w3c.dom.Node;
-import org.w3c.dom.Element;
+import javax.xml.xpath.*;
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.Proxy;
+import java.net.URISyntaxException;
+import java.net.URL;
 
 public class HttpClient {
 	private static final String UTF_8 = "UTF-8";
@@ -73,7 +55,7 @@ public class HttpClient {
 		}
 
 		System.out.println("Response Code : " + responseCode);
-		System.out.println("Response message: " + response.toString());
+		//System.out.println("Response message: " + response.toString());
 
 		return response;
 	}

@@ -16,6 +16,7 @@ import java.util.Map;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathExpressionException;
 
+import org.apache.jmeter.protocol.java.sampler.JavaSamplerContext;
 import org.xml.sax.SAXException;
 
 import vitalsgatherer.VitalsGather;
@@ -26,6 +27,7 @@ public class vitals {
 
 	public static void main(String[] args) throws XPathExpressionException, IOException, URISyntaxException,
 			ParserConfigurationException, SAXException {
+
 		VitalsGather vg = new VitalsGather();
 		String fileLocation = "d:\\data\\";
 		String fileName = "dataz";
