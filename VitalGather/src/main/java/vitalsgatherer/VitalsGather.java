@@ -28,6 +28,9 @@ import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Table;
+import com.google.common.collect.Table.Cell;
 
 import au.com.bytecode.opencsv.CSVParser;
 import au.com.bytecode.opencsv.CSVReader;
@@ -55,7 +58,7 @@ public class VitalsGather {
 	}
 
 	public enum resultOptions {
-		statusAndroid, statusTransactionAndroid, jsonAndroid, jsonTransactionAndroid, fullPathJsonAndroid, fullPathCsvAndroid, fullPathTransactionCsvAndroid, fullPathTransactionJsonAndroid, statusIos, statusTransactionIos, jsonIos, jsonTransactionIos, fullPathJsonIos, fullPathCsvIos, fullPathTransactionCsvIos, fullPathTransactionJsonIos
+		statusWindows, statusTransactionWindows, jsonWindows, jsonTransactionWindows, fullPathJsonWindows, fullPathCsvWindows, fullPathTransactionCsvWindows, fullPathTransactionJsonWindows, statusAndroid, statusTransactionAndroid, jsonAndroid, jsonTransactionAndroid, fullPathJsonAndroid, fullPathCsvAndroid, fullPathTransactionCsvAndroid, fullPathTransactionJsonAndroid, statusIos, statusTransactionIos, jsonIos, jsonTransactionIos, fullPathJsonIos, fullPathCsvIos, fullPathTransactionCsvIos, fullPathTransactionJsonIos
 	}
 
 	public Map<resultOptions, String> results = new HashMap<resultOptions, String>();
@@ -96,21 +99,23 @@ public class VitalsGather {
 		if (!scriptKey.equals("")) {
 			if (!offSet.equals("")) {
 				response = hc.sendRequest("https://" + host + "/services/executions?operation=list&scriptKey="
-						+ scriptKey.replace(" ", "%20") + ".xml&user=" + username + "&completed=true&password=" + password
-						+ "&time.type=" + att.toString() + "&time.anchor=" + startTimeEpoch + "&time.offset=" + offSet);
+						+ scriptKey.replace(" ", "%20") + ".xml&user=" + username + "&completed=true&password="
+						+ password + "&time.type=" + att.toString() + "&time.anchor=" + startTimeEpoch + "&time.offset="
+						+ offSet);
 			} else {
 				response = hc.sendRequest("https://" + host + "/services/executions?operation=list&scriptKey="
-						+ scriptKey.replace(" ", "%20") + ".xml&user=" + username + "&completed=true&password=" + password
-						+ "&time.type=" + att.toString() + "&time.anchor=" + startTimeEpoch);
+						+ scriptKey.replace(" ", "%20") + ".xml&user=" + username + "&completed=true&password="
+						+ password + "&time.type=" + att.toString() + "&time.anchor=" + startTimeEpoch);
 			}
 		} else {
 			if (!offSet.equals("")) {
 				response = hc.sendRequest("https://" + host + "/services/executions?operation=list&user=" + username
-						+ "&password=" + password + "&time.type=" + att.toString() + "&completed=true&time.anchor=" + startTimeEpoch
-						+ "&time.offset=" + offSet);
+						+ "&password=" + password + "&time.type=" + att.toString() + "&completed=true&time.anchor="
+						+ startTimeEpoch + "&time.offset=" + offSet);
 			} else {
 				response = hc.sendRequest("https://" + host + "/services/executions?operation=list&user=" + username
-						+ "&password=" + password + "&time.type=" + att.toString() + "&completed=true&time.anchor=" + startTimeEpoch);
+						+ "&password=" + password + "&time.type=" + att.toString() + "&completed=true&time.anchor="
+						+ startTimeEpoch);
 			}
 		}
 
@@ -119,23 +124,26 @@ public class VitalsGather {
 		String[] rk = hc.getJsonString(ja, "reportKey");
 
 		String[] ei = hc.getJsonString(ja, "executionId");
-		boolean androidfound = false;
-		boolean iosfound = false;
-		boolean androidTransFound = false;
-		boolean iosTransFound = false;
-		boolean overcompleteandroid = false;
-		boolean overcompleteios = false;
+		boolean foundAndroid = false;
+		boolean foundIos = false;
+		boolean foundWindows = false;
+		boolean transFoundAndroid = false;
+		boolean transFoundIos = false;
+		boolean transFoundWindows = false;
+		boolean overCompleteAndroid = false;
+		boolean overCompleteIos = false;
+		boolean overCompleteWindows = false;
 		for (int i = 0; i < rk.length; i++) {
 
 			response = hc.sendRequest("https://" + host + "/services/reports/" + rk[i].replace(" ", "%20")
 					+ "?operation=download&user=" + username + "&password=" + password + "&responseformat=xml");
 
 			os = hc.getXPathValue(response, "//*[@displayName='OS']/following-sibling::value");
-			if (os==null)
-			{
+			if (os == null) {
 				continue;
 			}
-			if (overwrite && !overcompleteandroid && os.equals("Android")) {
+
+			if (overwrite && !overCompleteAndroid && os.equals("Android")) {
 				String jsonFilePath = fileLocation + fileName + startTimeEpoch + os + ".json";
 				String csvFilePath = fileLocation + fileName + startTimeEpoch + os + ".csv";
 				String transactionCSVFilePath = fileLocation + fileName + startTimeEpoch + os + "Transaction.csv";
@@ -154,10 +162,10 @@ public class VitalsGather {
 				jsonTemp.delete();
 				jsonTransTemp.delete();
 				csvTransTemp.delete();
-				overcompleteandroid = true;
+				overCompleteAndroid = true;
 			}
 
-			if (overwrite && !overcompleteios && os.equals("iOS")) {
+			if (overwrite && !overCompleteIos && os.equals("iOS")) {
 				String jsonFilePath = fileLocation + fileName + startTimeEpoch + os + ".json";
 				String csvFilePath = fileLocation + fileName + startTimeEpoch + os + ".csv";
 				String transactionCSVFilePath = fileLocation + fileName + startTimeEpoch + os + "Transaction.csv";
@@ -176,7 +184,29 @@ public class VitalsGather {
 				jsonTemp.delete();
 				jsonTransTemp.delete();
 				csvTransTemp.delete();
-				overcompleteios = true;
+				overCompleteIos = true;
+			}
+
+			if (overwrite && !overCompleteWindows && os.equals("Windows")) {
+				String jsonFilePath = fileLocation + fileName + startTimeEpoch + os + ".json";
+				String csvFilePath = fileLocation + fileName + startTimeEpoch + os + ".csv";
+				String transactionCSVFilePath = fileLocation + fileName + startTimeEpoch + os + "Transaction.csv";
+				String transactionJsonFilePath = fileLocation + fileName + startTimeEpoch + os + "Transaction.json";
+
+				results.put(resultOptions.fullPathCsvWindows, csvFilePath);
+				results.put(resultOptions.fullPathJsonWindows, jsonFilePath);
+				results.put(resultOptions.fullPathTransactionJsonWindows, transactionJsonFilePath);
+				results.put(resultOptions.fullPathTransactionCsvWindows, transactionCSVFilePath);
+
+				File csvTemp = new File(csvFilePath);
+				File jsonTemp = new File(jsonFilePath);
+				File jsonTransTemp = new File(transactionJsonFilePath);
+				File csvTransTemp = new File(transactionCSVFilePath);
+				csvTemp.delete();
+				jsonTemp.delete();
+				jsonTransTemp.delete();
+				csvTransTemp.delete();
+				overCompleteWindows = true;
 			}
 
 			csv = fileLocation + fileName + startTimeEpoch + os + ".csv";
@@ -200,18 +230,19 @@ public class VitalsGather {
 				}
 				writer.writeAll(reader.readAll());
 				if (os.equals("iOS")) {
-					iosfound = true;
-
-				} else {
-					androidfound = true;
+					foundIos = true;
+				} else if (os.equals("Android")) {
+					foundAndroid = true;
+				} else if (os.equals("Windows")) {
+					foundWindows = true;
 				}
 
 			}
 
 			writer.close();
 
-			Map<String, Map<String, String>> transactions = new HashMap<String, Map<String, String>>();
-			Map<String, String> data = new HashMap<String, String>();
+			Table<String, String, String> transactions = HashBasedTable.create();
+
 			String transName = "";
 			String transTimer = "";
 			String time = "";
@@ -225,46 +256,67 @@ public class VitalsGather {
 			NodeList nodeL3 = hc.getXPathList(response,
 					"//name[@displayName=\"Timer report\"]/parent::info/times/flowTimes/end/millis");
 			for (int z = 0; z < nodeL.getLength(); z++) {
+
 				nText = nodeL.item(z).getTextContent();
 				nText2 = nodeL2.item(z).getTextContent();
 				nText3 = nodeL3.item(z).getTextContent();
 				transName = nText;
 				transTimer = nText2;
 				time = nText3;
-				data.put(transName, transTimer);
-				transactions.put(time, data);
+
+				transactions.put(transName, transTimer, time);
 
 				if (os.equals("iOS")) {
-					iosTransFound = true;
-
-				} else {
-					androidTransFound = true;
+					transFoundIos = true;
+				} else if (os.equals("Android")) {
+					transFoundAndroid = true;
+				} else if (os.equals("Windows")) {
+					transFoundWindows = true;
 				}
 
 			}
 
 			if (os.equals("iOS")) {
-				if (iosfound) {
+				if (foundIos) {
 					results.put(resultOptions.statusIos, "success");
-					if (iosTransFound) {
-						results.put(resultOptions.statusTransactionIos, "success");
-						if (csvFileTrans.length() <= 0) {
-							MapToCSV(transactions, results.get(resultOptions.fullPathTransactionCsvIos), true);
-						} else {
-							MapToCSV(transactions, results.get(resultOptions.fullPathTransactionCsvIos), false);
-						}
+				}
+				if (transFoundIos) {
+					results.put(resultOptions.statusTransactionIos, "success");
+					if (csvFileTrans.length() <= 0) {
+						MapToCSV(transactions, results.get(resultOptions.fullPathTransactionCsvIos),
+								rk[i].replace(" ", "%20"), username, true);
+					} else {
+						MapToCSV(transactions, results.get(resultOptions.fullPathTransactionCsvIos),
+								rk[i].replace(" ", "%20"), username, false);
 					}
 				}
-			} else {
-				if (androidfound) {
+			} else if (os.equals("Android")) {
+				if (foundAndroid) {
 					results.put(resultOptions.statusAndroid, "success");
-					if (androidTransFound) {
-						results.put(resultOptions.statusTransactionAndroid, "success");
-						if (csvFileTrans.length() <= 0) {
-							MapToCSV(transactions, results.get(resultOptions.fullPathTransactionCsvAndroid), true);
-						} else {
-							MapToCSV(transactions, results.get(resultOptions.fullPathTransactionCsvAndroid), false);
-						}
+
+				}
+				if (transFoundAndroid) {
+					results.put(resultOptions.statusTransactionAndroid, "success");
+					if (csvFileTrans.length() <= 0) {
+						MapToCSV(transactions, results.get(resultOptions.fullPathTransactionCsvAndroid),
+								rk[i].replace(" ", "%20"), username, true);
+					} else {
+						MapToCSV(transactions, results.get(resultOptions.fullPathTransactionCsvAndroid),
+								rk[i].replace(" ", "%20"), username, false);
+					}
+				}
+			} else if (os.equals("Windows")) {
+				if (foundWindows) {
+					results.put(resultOptions.statusWindows, "success");
+				}
+				if (transFoundWindows) {
+					results.put(resultOptions.statusTransactionWindows, "success");
+					if (csvFileTrans.length() <= 0) {
+						MapToCSV(transactions, results.get(resultOptions.fullPathTransactionCsvWindows),
+								rk[i].replace(" ", "%20"), username, true);
+					} else {
+						MapToCSV(transactions, results.get(resultOptions.fullPathTransactionCsvWindows),
+								rk[i].replace(" ", "%20"), username, false);
 					}
 				}
 			}
@@ -305,7 +357,8 @@ public class VitalsGather {
 				System.out.println("Transaction data for Android not found with parameters provided");
 			}
 		} else {
-			results.put(resultOptions.statusTransactionAndroid, "Transaction data for Android not found with parameters provided");
+			results.put(resultOptions.statusTransactionAndroid,
+					"Transaction data for Android not found with parameters provided");
 			System.out.println("Transaction data for Android not found with parameters provided");
 
 		}
@@ -348,6 +401,44 @@ public class VitalsGather {
 			System.out.println("Transaction data for iOS not found with parameters provided");
 		}
 
+		if (results.get(resultOptions.statusWindows) != null) {
+			if (results.get(resultOptions.statusWindows).equals("success")) {
+				if (outputJson) {
+					CSVToJson(new File(results.get(resultOptions.fullPathCsvWindows)),
+							new File(results.get(resultOptions.fullPathJsonWindows)));
+				}
+				results.put(resultOptions.jsonWindows,
+						readAsJson(readObjectsFromCsv(new File(results.get(resultOptions.fullPathCsvWindows)))));
+			} else {
+				results.put(resultOptions.statusWindows, "CSV data for Windows not found with parameters provided");
+				System.out.println("CSV data for Windows not found with parameters provided");
+			}
+		} else {
+			results.put(resultOptions.statusWindows, "CSV data for Windows not found with parameters provided");
+			System.out.println("CSV data for Windows not found with parameters provided");
+		}
+
+		if (results.get(resultOptions.statusTransactionWindows) != null) {
+			if (results.get(resultOptions.statusTransactionWindows).equals("success")) {
+
+				if (outputJson) {
+					CSVToJson(new File(results.get(resultOptions.fullPathTransactionCsvWindows)),
+							new File(results.get(resultOptions.fullPathTransactionJsonWindows)));
+				}
+
+				results.put(resultOptions.jsonTransactionWindows, readAsJson(
+						readObjectsFromCsv(new File(results.get(resultOptions.fullPathTransactionCsvWindows)))));
+			} else {
+				results.put(resultOptions.statusTransactionWindows,
+						"Transaction data for Windows not found with parameters provided");
+				System.out.println("Transaction data for Windows not found with parameters provided");
+			}
+		} else {
+			results.put(resultOptions.statusTransactionWindows,
+					"Transaction data for Windows not found with parameters provided");
+			System.out.println("Transaction data for Windows not found with parameters provided");
+		}
+
 		return results;
 
 	}
@@ -369,28 +460,29 @@ public class VitalsGather {
 		return writeAsJson(data, out);
 	}
 
-	public void MapToCSV(Map<String, Map<String, String>> results, String csv, boolean header) {
+	public void MapToCSV(Table<String, String, String> results, String csv, String rk, String username,
+			boolean header) {
 
 		try (FileWriter writer = new FileWriter(csv, true)) {
 			if (header) {
-				writer.write("\"Time\",\"Transaction\",\"Timer\"\r\n");
+				writer.write("\"Time\",\"Transaction\",\"Timer\",\"ReportURL\"\r\n");
 			}
 			int counter = 0;
-			for (Entry<String, Map<String, String>> entry : results.entrySet()) {
+			String reportURL = "<a href='https://demo.perfectomobile.com/nexperience/singletest/report/?reportRepositoryKey="
+					+ rk + "&ownderId=" + username + "' target='_about' >Perfecto Url</a>";
 
-				for (Entry<String, String> entrytwo : ((Map<String, String>) entry.getValue()).entrySet()) {
-					String out = "\"" + entry.getKey() + "\",\"" + entrytwo.getKey() + "\",\"" + entrytwo.getValue()
-							+ "\"\r\n";
-					writer.write(out);
-				}
+			for (Cell<String, String, String> cell : results.cellSet()) {
 
+				String out = "\"" + cell.getValue() + "\",\"" + cell.getRowKey() + "\",\"" + cell.getColumnKey()
+						+ "\",\"" + reportURL + "\"\r\n";
+
+				writer.write(out);
 			}
 
 			writer.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
 	}
 
 	public List<Map<?, ?>> readObjectsFromCsv(File file) throws IOException {

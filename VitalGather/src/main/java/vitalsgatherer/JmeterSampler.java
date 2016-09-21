@@ -82,6 +82,14 @@ public class JmeterSampler extends AbstractJavaSamplerClient implements Serializ
 					url = url + "&iOSTransactionCSVFile=" + URLEncoder.encode(vfios.getAbsolutePath(), "UTF-8");
 					foundSuccess = true;
 				}
+				
+				if (results.get(VitalsGather.resultOptions.statusTransactionWindows).equals("success")) {
+					System.out.println(results.get(VitalsGather.resultOptions.jsonTransactionWindows));
+					vfwindows = new File(results.get(VitalsGather.resultOptions.fullPathTransactionCsvWindows));
+					url = url + "&WindowsTransactionCSVFile=" + URLEncoder.encode(vfwindows.getAbsolutePath(), "UTF-8");
+					foundSuccess = true;
+				}
+				
 
 				if (foundSuccess) {
 					try {
